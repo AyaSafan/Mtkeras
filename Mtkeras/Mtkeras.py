@@ -151,6 +151,8 @@ class Mtkeras:
         if(self.dataType == 'text'):
             for i in range(len(self.myTestSet)):
                 self.myTestSet[i].reverse()
+        elif(self.dataType == 'grayscaleImage'):
+            self.myTestSet = 255 - self.myTestSet
         return self
 
     '''
