@@ -274,7 +274,7 @@ class Mtkeras:
             str1 = " ".join(arr[index:])
             str2 = " ".join(arr[1:index])
             self.myTestSet = arr[0] + " * " + str1 + " WHERE " + str2
-            return self
+        return self
 
     '''
     Summary:
