@@ -16,6 +16,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import time
+from copy import deepcopy
 
 
 class Mtkeras:
@@ -48,8 +49,8 @@ class Mtkeras:
     """
 
     def __init__(self, myTestSet, dataType='grayscaleImage', model=None):
-        self.myTestSet = myTestSet
-        self.myStartTestSet = myTestSet
+        self.myTestSet = deepcopy(myTestSet)
+        self.myStartTestSet = deepcopy(myTestSet)
         self.dataType = dataType
         self.violatingCases = []
         self.model = model
@@ -98,7 +99,8 @@ class Mtkeras:
 
     '''
     Summary:
-        The "brightness" MRIP: for images, this MRIP can adjust the image's brightness. It transforms the input image pixelwise according to the equation O = I**gamma after scaling each pixel to the range 0 to 1
+        The "brightness" MRIP: for images, this MRIP can adjust the image's brightness. 
+        It transforms the input image pixelwise according to the equation O = I**gamma after scaling each pixel to the range 0 to 1
 
     Args:
         - gamma(optional): float, non negative real number, the default value is 1
@@ -109,9 +111,14 @@ class Mtkeras:
         - call the property ".myTestSet" to return a tranformed dataset(a list)
     '''
     def brightness(self, gamma=1, gain=1):
-        # Adjust the brightness of the dataset
-        for index, ele in enumerate(self.myTestSet):
-            self.myTestSet[index] = skimage.exposure.adjust_gamma(ele, gamma, gain)
+        # Check if the dataset is an image type
+        if self.dataType in ['grayscaleImage', 'colorImage']:
+            for index, img in enumerate(self.myTestSet):
+                # Ensure img is a numpy array and apply gamma correction
+                self.myTestSet[index] = skimage.exposure.adjust_gamma(img, gamma=gamma, gain=gain)
+        else:
+            raise ValueError("Brightness adjustment is only applicable to image datasets.")
+        
         return self
 
 
@@ -131,7 +138,7 @@ class Mtkeras:
         # multiple every pixel by a constant
         if(self.dataType == 'grayscaleImage'):
             self.myTestSet = self.myTestSet * n_mul
-            self.myTestSet = np.clip(self.myTestSet * n_mul, 0, 255)
+            self.myTestSet = np.clip(self.myTestSet, 0, 255)
         return self
 
     '''
@@ -151,7 +158,7 @@ class Mtkeras:
         if(self.dataType == 'text'):
             for i in range(len(self.myTestSet)):
                 self.myTestSet[i].reverse()
-        elif(self.dataType == 'grayscaleImage'):
+        if self.dataType in ['grayscaleImage', 'colorImage']:
             self.myTestSet = 255 - self.myTestSet
         return self
 
