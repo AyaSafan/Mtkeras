@@ -91,6 +91,7 @@ rsa==4.7
 scikit-image==0.16.2
 scipy==1.10.0
 six==1.15.0
+selenium==4.26.1
 soupsieve==1.9.4
 tensorboard==2.1.0
 tensorflow==2.11.1
