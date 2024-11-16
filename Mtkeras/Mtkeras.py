@@ -92,7 +92,7 @@ class Mtkeras:
             picx = self.myTestSet.shape[1]
             picy = self.myTestSet.shape[2]
             matrix = np.ones((picx, picy))*n_additive
-            self.myTestSet += matrix
+            self.myTestSet += matrix[:, :, np.newaxis] 
             return self
 
     '''
@@ -174,7 +174,7 @@ class Mtkeras:
                 xaxis = np.random.randint(0, picx)
                 yaxis = np.random.randint(0, picy)
                 noise[xaxis][yaxis] = np.random.randint(0, 255)
-            self.myTestSet = self.myTestSet + noise
+            self.myTestSet += noise[:, :, np.newaxis] 
             return self
         elif(self.dataType == 'colorImage'):
             picx = self.myTestSet.shape[1]
@@ -293,14 +293,16 @@ class Mtkeras:
 
     def equality(self, params=None):
         if(self.dataType == 'grayscaleImage'):
+            '''
             index_one = self.myTestSet.shape[0]
             index_two = self.myTestSet.shape[1]
             index_three = self.myTestSet.shape[2]
 
             self.myTestSet = self.myTestSet.reshape(
-                index_one, index_two * index_three)/255
+                index_one, index_two , index_three)/255
             self.myStartTestSet = self.myStartTestSet.reshape(
-                index_one, index_two * index_three)/255
+                index_one, index_two,  index_three)/255
+            '''
 
             predict1 = self.model.predict_classes(self.myTestSet)
             predict2 = self.model.predict_classes(self.myStartTestSet)
