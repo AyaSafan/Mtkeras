@@ -87,13 +87,14 @@ class Mtkeras:
     '''
 
     def additive(self, n_additive):
-        # add a constant to every pixel in a picture
-        if(self.dataType == 'grayscaleImage'):
-            picx = self.myTestSet.shape[1]
-            picy = self.myTestSet.shape[2]
-            matrix = np.ones((picx, picy))*n_additive
-            self.myTestSet += matrix[:, :, np.newaxis] 
-            return self
+      # Add a constant to every pixel in a picture
+      if self.dataType == 'grayscaleImage':
+          picx = self.myTestSet.shape[1]
+          picy = self.myTestSet.shape[2]
+          matrix = np.ones((picx, picy)) * n_additive
+          self.myTestSet = np.clip(self.myTestSet + matrix[:, :, np.newaxis], 0, 255)
+      return self
+
 
     '''
     Summary:
@@ -107,13 +108,12 @@ class Mtkeras:
         - a Mtkeras Object
         - call the property ".myTestSet" to return a tranformed dataset(a list)
     '''
-
     def brightness(self, gamma=1, gain=1):
-        # adjust the brightness of the picture
+        # Adjust the brightness of the dataset
         for index, ele in enumerate(self.myTestSet):
-            self.myTestSet[index] = skimage.exposure.adjust_gamma(
-                ele, gamma, gain)
-            return self
+            self.myTestSet[index] = skimage.exposure.adjust_gamma(ele, gamma, gain)
+        return self
+
 
     '''
     Summary:
@@ -131,7 +131,8 @@ class Mtkeras:
         # multiple every pixel by a constant
         if(self.dataType == 'grayscaleImage'):
             self.myTestSet = self.myTestSet * n_mul
-            return self
+            self.myTestSet = np.clip(self.myTestSet * n_mul, 0, 255)
+        return self
 
     '''
     Summary:
@@ -150,7 +151,7 @@ class Mtkeras:
         if(self.dataType == 'text'):
             for i in range(len(self.myTestSet)):
                 self.myTestSet[i].reverse()
-            return self
+        return self
 
     '''
     Summary:
@@ -165,16 +166,17 @@ class Mtkeras:
     '''
 
     def noise(self, n_noise=0):
-        # add random noise point into a picture
-        if(self.dataType == 'grayscaleImage'):
-            picx = self.myTestSet.shape[1]
-            picy = self.myTestSet.shape[2]
+        if self.dataType == 'grayscaleImage':
+            num_images, picx, picy, channels = self.myTestSet.shape
+
             noise = np.zeros((picx, picy))
-            for i in range(n_noise):
+            
+            for _ in range(n_noise):
+                # Randomly select (x, y) positions for noise
                 xaxis = np.random.randint(0, picx)
                 yaxis = np.random.randint(0, picy)
-                noise[xaxis][yaxis] = np.random.randint(0, 255)
-            self.myTestSet += noise[:, :, np.newaxis] 
+                noise[xaxis, yaxis] = np.random.randint(-255, 256)
+            self.myTestSet = np.clip(self.myTestSet + noise[:, :, np.newaxis], 0, 255)
             return self
         elif(self.dataType == 'colorImage'):
             picx = self.myTestSet.shape[1]
@@ -185,7 +187,7 @@ class Mtkeras:
                 yaxis = np.random.randint(0, picy)
                 noise[xaxis][yaxis][np.random.randint(
                     0, 3)] = np.random.randint(0, 255)
-            self.myTestSet = self.myTestSet + noise
+            self.myTestSet = np.clip(self.myTestSet + noise, 0, 255)
             return self
         # add random word into a text in the context of sentiment analysis
         elif(self.dataType == 'text'):
@@ -293,19 +295,13 @@ class Mtkeras:
 
     def equality(self, params=None):
         if(self.dataType == 'grayscaleImage'):
-            '''
-            index_one = self.myTestSet.shape[0]
-            index_two = self.myTestSet.shape[1]
-            index_three = self.myTestSet.shape[2]
+                
+            self.myTestSet = self.myTestSet.astype("float32") / 255
+            self.myStartTestSet = self.myStartTestSet.astype("float32") / 255
+            
 
-            self.myTestSet = self.myTestSet.reshape(
-                index_one, index_two , index_three)/255
-            self.myStartTestSet = self.myStartTestSet.reshape(
-                index_one, index_two,  index_three)/255
-            '''
-
-            predict1 = self.model.predict_classes(self.myTestSet)
-            predict2 = self.model.predict_classes(self.myStartTestSet)
+            predict1 = np.argmax(self.model.predict(self.myTestSet), axis=-1)  
+            predict2 = np.argmax(self.model.predict(self.myStartTestSet), axis=-1)  
             for index in range(len(predict1)):
                 if(predict1[index] != predict2[index]):
                     self.violatingCases.append(index)
@@ -318,8 +314,8 @@ class Mtkeras:
             for ele in self.myStartTestSet:
                 sourceOutput.append(process_img(ele).tolist())
 
-            predict1 = self.model.predict_classes(np.array(sourceOutput))
-            predict2 = self.model.predict_classes(np.array(followUpOutput))
+            predict1 = np.argmax(self.model.predict(np.array(sourceOutput)), axis=-1)  
+            predict2 = np.argmax(self.model.predict(np.array(followUpOutput)), axis=-1)  
 
             for index in range(len(predict1)):
                 if(predict1[index] != predict2[index]):
