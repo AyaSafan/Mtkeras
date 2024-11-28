@@ -303,45 +303,56 @@ class Mtkeras:
     '''
 
     def equality(self, params=None):
-        if(self.dataType == 'grayscaleImage'):
-                
+        if self.dataType == 'grayscaleImage':
             self.myTestSet = self.myTestSet.astype("float32") / 255
             self.myStartTestSet = self.myStartTestSet.astype("float32") / 255
-            
 
-            predict1 = np.argmax(self.model.predict(self.myTestSet), axis=-1)  
-            predict2 = np.argmax(self.model.predict(self.myStartTestSet), axis=-1)  
+            predict1 = np.argmax(self.model.predict(self.myTestSet), axis=-1)
+            predict2 = np.argmax(self.model.predict(self.myStartTestSet), axis=-1)
+
             for index in range(len(predict1)):
-                if(predict1[index] != predict2[index]):
+                if predict1[index] != predict2[index]:
                     self.violatingCases.append(index)
 
-        elif(self.dataType == 'colorImage'):
+            total_cases = len(predict1)
+
+        elif self.dataType == 'colorImage':
             sourceOutput = []
             followUpOutput = []
+
             for ele in self.myTestSet:
                 followUpOutput.append(process_img(ele).tolist())
             for ele in self.myStartTestSet:
                 sourceOutput.append(process_img(ele).tolist())
 
-            predict1 = np.argmax(self.model.predict(np.array(sourceOutput)), axis=-1)  
-            predict2 = np.argmax(self.model.predict(np.array(followUpOutput)), axis=-1)  
+            predict1 = np.argmax(self.model.predict(np.array(sourceOutput)), axis=-1)
+            predict2 = np.argmax(self.model.predict(np.array(followUpOutput)), axis=-1)
 
             for index in range(len(predict1)):
-                if(predict1[index] != predict2[index]):
+                if predict1[index] != predict2[index]:
                     self.violatingCases.append(index)
 
-        elif(self.dataType == 'searchTerm'):
+            total_cases = len(predict1)
+
+        elif self.dataType == 'searchTerm':
             sourceOutput = test_search_engine(self.myStartTestSet, **params)
             followUpOutput = test_search_engine(self.myTestSet, **params)
+
             for index in range(len(sourceOutput)):
-                if(sourceOutput[index] != followUpOutput[index]):
+                if sourceOutput[index] != followUpOutput[index]:
                     self.violatingCases.append(index)
 
-        elif(self.dataType == 'query'):
-            self.violatingCases.append(index)
+            total_cases = len(sourceOutput)
 
-        print("There are {num} violations of MROP equality.".format(
-            num=len(self.violatingCases)))
+
+        # Calculate percentages
+        violation_percentage = (len(self.violatingCases) / total_cases) * 100
+        similarity_percentage = 100 - violation_percentage
+
+        # Print results
+        print("There are {num} violations of MROP equality.".format(num=len(self.violatingCases)))
+        print("Percentage of similarity: {:.2f}%".format(similarity_percentage))
+
         return self
 
 
@@ -691,12 +702,21 @@ class Mtkeras_mrop:
     '''
 
     def equality(self):
-        for i in range(len(self.sourceTestOutput)):
-            if(self.sourceTestOutput[i] != self.followUpTestOutuput[i]):
-                self.count += 1
-                self.violatingCaseIndex.append(i)
-        print("There are {} cases violates the MROP equality.".format(self.count))
-        return self.violatingCaseIndex
+      total_cases = len(self.sourceTestOutput)
+      for i in range(total_cases):
+          if self.sourceTestOutput[i] != self.followUpTestOutuput[i]:
+              self.count += 1
+              self.violatingCaseIndex.append(i)
+      
+      # Calculate percentages
+      violation_percentage = (self.count / total_cases) * 100
+      similarity_percentage = 100 - violation_percentage
+
+      # Print results
+      print("There are {} cases that violate the MROP equality.".format(self.count))
+      print("Percentage of similarity: {:.2f}%".format(similarity_percentage))
+      
+      return self.violatingCaseIndex
 
     '''
     Summary:
